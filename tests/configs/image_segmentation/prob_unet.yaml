@@ -13,3 +13,12 @@ uq_method:
   lr_scheduler:
     _target_: torch.optim.lr_scheduler.ConstantLR
     _partial_: true
+
+trainer:
+  _target_: lightning.Trainer
+  max_epochs: 5
+  log_every_n_steps: 1
+  callbacks: # Add callbacks to the trainer
+    - _target_: lightning_uq_box.uq_methods.callbacks.LogSegmentationPreds
+      num_samples: 8
+      every_n_steps: 1

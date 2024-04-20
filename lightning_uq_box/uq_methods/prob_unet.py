@@ -179,7 +179,7 @@ class ProbUNet(BaseModule):
         rec_loss_sum = torch.sum(rec_loss)
         rec_loss_mean = torch.mean(rec_loss)
 
-        loss = -(rec_loss_sum + self.beta * kl_loss)
+        loss = rec_loss_sum + self.beta * kl_loss
 
         return {
             "loss": loss,
@@ -267,12 +267,15 @@ class ProbUNet(BaseModule):
         Returns:
             training loss
         """
+        batch_size = batch[self.input_key].shape[0]
         loss_dict = self.compute_loss(batch)
 
-        self.log("train_loss", loss_dict["loss"])
-        self.log("train_rec_loss_sum", loss_dict["rec_loss_sum"])
-        self.log("train_rec_loss_mean", loss_dict["rec_loss_mean"])
-        self.log("train_kl_loss", loss_dict["kl_loss"])
+        self.log("train_loss", loss_dict["loss"], batch_size=batch_size)
+        self.log("train_rec_loss_sum", loss_dict["rec_loss_sum"], batch_size=batch_size)
+        self.log(
+            "train_rec_loss_mean", loss_dict["rec_loss_mean"], batch_size=batch_size
+        )
+        self.log("train_kl_loss", loss_dict["kl_loss"], batch_size=batch_size)
 
         # compute metrics with reconstruction
         self.train_metrics(
@@ -297,12 +300,13 @@ class ProbUNet(BaseModule):
         Returns:
             validation loss
         """
+        batch_size = batch[self.input_key].shape[0]
         loss_dict = self.compute_loss(batch)
 
-        self.log("val_loss", loss_dict["loss"])
-        self.log("val_rec_loss_sum", loss_dict["rec_loss_sum"])
-        self.log("val_rec_loss_mean", loss_dict["rec_loss_mean"])
-        self.log("val_kl_loss", loss_dict["kl_loss"])
+        self.log("val_loss", loss_dict["loss"], batch_size=batch_size)
+        self.log("val_rec_loss_sum", loss_dict["rec_loss_sum"], batch_size=batch_size)
+        self.log("val_rec_loss_mean", loss_dict["rec_loss_mean"], batch_size=batch_size)
+        self.log("val_kl_loss", loss_dict["kl_loss"], batch_size=batch_size)
         # compute metrics with reconstruction
         self.val_metrics(
             loss_dict["reconstruction"],
