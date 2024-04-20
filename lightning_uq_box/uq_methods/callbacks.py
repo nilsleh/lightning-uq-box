@@ -148,9 +148,6 @@ class LogSegmentationPreds(Callback):
 
                 for logger in trainer.loggers:
                     curr_logger = logger.experiment
-                    import pdb
-
-                    pdb.set_trace()
                     if "tensorboard" in str(curr_logger.__class__):
                         curr_logger.add_figure(
                             f"pred_{trainer.global_step}_{i}",
@@ -159,7 +156,9 @@ class LogSegmentationPreds(Callback):
                         )
                     elif "wandb" in str(curr_logger.__class__):
                         curr_logger.log({"prediction": fig}, step=trainer.global_step)
-                    else:
-                        continue
+                    else:  # save to disk
+                        fig.savefig(
+                            curr_logger.log_dir + f"/pred_{trainer.global_step}_{i}.png"
+                        )
 
                 plt.close(fig)
