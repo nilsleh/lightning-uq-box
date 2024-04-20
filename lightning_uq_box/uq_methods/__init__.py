@@ -81,6 +81,7 @@ from .swag import (
     SWAGSegmentation,
 )
 from .temp_scaling import TempScaling
+from .vae import VAE
 
 __all__ = (
     # Base Module
@@ -188,6 +189,8 @@ __all__ = (
     "TTABase",
     "TTARegression",
     "TTAClassification",
+    # Variational Auto Encoder
+    "VAE",
     # Callbacks
     "LogImageSamples",
     "LogSegmentationPreds",
