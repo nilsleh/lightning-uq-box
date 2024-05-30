@@ -1,0 +1,15 @@
+uq_method:
+  _target_: lightning_uq_box.uq_methods.UnconditionalImageDiffusionModel
+  net:
+    _target_: diffusers.models.unets.unet_2d.UNet2DModel
+    in_channels: 5
+    out_channels: 5
+    block_out_channels:
+    - 8
+    - 8
+    - 8
+    - 8
+    norm_num_groups: 4
+  noise_scheduler:
+    _target_: diffusers.schedulers.scheduling_ddpm.DDPMScheduler
+    num_train_timesteps: 10

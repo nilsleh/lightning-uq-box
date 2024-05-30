@@ -7,6 +7,7 @@ from .toy_8_gaussians import Toy8GaussiansDataset
 from .toy_donut import ToyDonut
 from .toy_gaussian_sideways import ToyGaussianSideWays
 from .toy_image_classification import ToyImageClassificationDataset
+from .toy_image_generation import ToyImageGenerationDataset
 from .toy_image_regression import ToyImageRegressionDataset
 from .toy_image_segmentation import ToySegmentationDataset
 from .toy_pixelwise_regression import ToyPixelWiseRegressionDataset
@@ -20,6 +21,8 @@ __all__ = (
     "Toy8GaussiansDataset",
     # Toy Gaussian dataset
     "ToyGaussianSideWays",
+    # Toy Image Generation dataset
+    "ToyImageGenerationDataset",
     # Toy Pixel-wise Regression dataset
     "ToyPixelWiseRegressionDataset",
     # Toy Donut dataset

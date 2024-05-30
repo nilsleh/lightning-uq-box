@@ -1,0 +1,8 @@
+uq_method:
+  _target_: lightning_uq_box.uq_methods.ConditionalImageDiffusionModel
+  net:
+    _target_: diffusers.models.unets.unet_2d_condition.UNet2DConditionModel
+    in_channels: 5
+  noise_scheduler:
+    _target_: diffusers.schedulers.scheduling_ddpm.DDPMScheduler
+    num_train_timesteps: 10

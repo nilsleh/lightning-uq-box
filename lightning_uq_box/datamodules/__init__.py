@@ -10,6 +10,7 @@ from .toy_gaussian_sideways import ToyGaussianSideWaysDataModule
 from .toy_half_moons import TwoMoonsDataModule
 from .toy_heteroscedastic import ToyHeteroscedasticDatamodule
 from .toy_image_classification import ToyImageClassificationDatamodule
+from .toy_image_generation import ToyImageGenerationDatamodule
 from .toy_image_regression import ToyImageRegressionDatamodule
 from .toy_image_segmentation import ToySegmentationDataModule
 from .toy_pixelwise_regression import ToyPixelwiseRegressionDataModule
@@ -22,6 +23,7 @@ __all__ = (
     "TwoMoonsDataModule",
     "ToyHeteroscedasticDatamodule",
     "ToyImageClassificationDatamodule",
+    "ToyImageGenerationDatamodule",
     "ToyImageRegressionDatamodule",
     "ToySegmentationDataModule",
     "ToyDUE",

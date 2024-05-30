@@ -1,0 +1,6 @@
+data:
+  _target_: lightning_uq_box.datamodules.ToyImageGenerationDatamodule
+  in_channels: 5
+  cond_channels: 1
+  num_samples: 32
+  batch_size: 8

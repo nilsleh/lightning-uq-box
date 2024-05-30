@@ -43,6 +43,10 @@ from .deep_kernel_learning import (
     compute_initial_values,
 )
 from .deterministic_uncertainty_estimation import DUEClassification, DUERegression
+from .diffuser_models import (
+    ConditionalImageDiffusionModel,
+    UnconditionalImageDiffusionModel,
+)
 from .hierarchical_prob_unet import HierarchicalProbUNet
 from .img2img_conformal import Img2ImgConformal
 from .inference_time_augmentation import TTABase, TTAClassification, TTARegression
@@ -98,6 +102,9 @@ __all__ = (
     "NoiseScheduler",
     # conformalized Quantile Regression
     "ConformalQR",
+    # Diffusion Modules for Diffusers
+    "ConditionalImageDiffusionModel",
+    "UnconditionalImageDiffusionModel",
     # MC-Dropout
     "MCDropoutBase",
     "MCDropoutRegression",
