@@ -19,6 +19,7 @@ from gpytorch.models import ApproximateGP
 from gpytorch.utils.grid import ScaleToBounds
 from gpytorch.variational import (
     CholeskyVariationalDistribution,
+    GridInterpolationVariationalStrategy,
     IndependentMultitaskVariationalStrategy,
     VariationalStrategy,
 )
@@ -55,6 +56,7 @@ class DKLBase(gpytorch.Module, BaseModule):
         self,
         feature_extractor: nn.Module,
         n_inducing_points: int,
+        scale_bounds: tuple[float] = (-10.0, 10.0),
         gp_kernel: str = "RBF",
         optimizer: OptimizerCallable = torch.optim.Adam,
         lr_scheduler: LRSchedulerCallable = None,
@@ -66,6 +68,9 @@ class DKLBase(gpytorch.Module, BaseModule):
         Args:
             feature_extractor: feature extractor model
             n_inducing_points: number of inducing points
+            scale_bounds: bounds for scaling feature output
+                from feature_extractor before forward pass
+                of the GP layer
             gp_kernel: kernel choice, supports one of
                 ['RBF', 'Matern12', 'Matern32', 'Matern52', 'RQ']
             elbo_fn: gpytorch elbo function used for optimization
@@ -93,6 +98,8 @@ class DKLBase(gpytorch.Module, BaseModule):
         self.lr_scheduler = lr_scheduler
 
         self.dkl_model_built = False
+
+        self.scale_bounds = scale_bounds
 
         self.setup_task()
 
@@ -296,6 +303,7 @@ class DKLRegression(DKLBase):
         feature_extractor: nn.Module,
         n_inducing_points: int,
         num_targets: int = 1,
+        scale_bounds: tuple[float] = (-10.0, 10.0),
         gp_kernel: str = "RBF",
         freeze_backbone: bool = False,
         optimizer: OptimizerCallable = torch.optim.Adam,
@@ -307,6 +315,9 @@ class DKLRegression(DKLBase):
             feature_extractor: feature extractor model
             n_inducing_points: number of inducing points
             num_targets: number of targets
+            scale_bounds: bounds for scaling feature output
+                from feature_extractor before forward pass
+                of the GP layer
             gp_kernel: kernel choice, supports one of
                 ['RBF', 'Matern12', 'Matern32', 'Matern52', 'RQ']
             elbo_fn: gpytorch elbo function used for optimization
@@ -317,7 +328,12 @@ class DKLRegression(DKLBase):
         self.freeze_backbone = freeze_backbone
 
         super().__init__(
-            feature_extractor, n_inducing_points, gp_kernel, optimizer, lr_scheduler
+            feature_extractor,
+            n_inducing_points,
+            scale_bounds,
+            gp_kernel,
+            optimizer,
+            lr_scheduler,
         )
 
         self.save_hyperparameters(
@@ -348,8 +364,10 @@ class DKLRegression(DKLBase):
             initial_lengthscale=self.initial_lengthscale,
             initial_inducing_points=self.initial_inducing_points,
             kernel=self.gp_kernel,
+            task="regression",
+            scale_bounds=self.scale_bounds,
         )
-        self.scale_to_bounds = ScaleToBounds(-2.0, 2.0)
+        self.scale_to_bounds = ScaleToBounds(self.scale_bounds[0], self.scale_bounds[1])
         self.likelihood = GaussianLikelihood()
 
         self.elbo_fn = VariationalELBO(
@@ -431,6 +449,7 @@ class DKLClassification(DKLBase):
         n_inducing_points: int,
         num_classes: int,
         task: str = "multiclass",
+        scale_bounds: tuple[float] = (-10.0, 10.0),
         gp_kernel: str = "RBF",
         freeze_backbone: bool = False,
         optimizer: OptimizerCallable = torch.optim.Adam,
@@ -441,9 +460,12 @@ class DKLClassification(DKLBase):
         Args:
             feature_extractor: feature extractor model
             n_inducing_points: number of inducing points
+            num_classes: number of classes
+            scale_bounds: bounds for scaling feature output
+                from feature_extractor before forward pass
+                of the GP layer
             gp_kernel: GP kernel choice, supports one of
                 'RBF', 'Matern12', 'Matern32', 'Matern52', 'RQ']
-            num_classes: number of classes
             task: classification task, one of ['binary', 'multiclass', 'multilabel']
             freeze_backbone: whether to freeze the backbone
             optimizer: optimizer used for training
@@ -458,7 +480,12 @@ class DKLClassification(DKLBase):
         self.freeze_backbone = freeze_backbone
 
         super().__init__(
-            feature_extractor, n_inducing_points, gp_kernel, optimizer, lr_scheduler
+            feature_extractor,
+            n_inducing_points,
+            scale_bounds,
+            gp_kernel,
+            optimizer,
+            lr_scheduler,
         )
 
         self.save_hyperparameters(
@@ -498,8 +525,10 @@ class DKLClassification(DKLBase):
             initial_lengthscale=self.initial_lengthscale,
             initial_inducing_points=self.initial_inducing_points,
             kernel=self.gp_kernel,
+            task="classification",
+            scale_bounds=self.scale_bounds,
         )
-        self.scale_to_bounds = ScaleToBounds(-2.0, 2.0)
+        self.scale_to_bounds = ScaleToBounds(-10.0, 10.0)
         self.likelihood = SoftmaxLikelihood(
             num_classes=self.num_classes, num_features=self.num_features
         )
@@ -511,6 +540,22 @@ class DKLClassification(DKLBase):
         if self.device.type == "cuda":
             self.gp_layer = self.gp_layer.cuda()
             self.likelihood = self.likelihood.cuda()
+
+    def forward(self, X: Tensor) -> MultivariateNormal:
+        """Forward pass through model.
+
+        Args:
+            X: input tensor to backbone
+
+        Returns:
+            output from GP
+        """
+        features = self.feature_extractor(X)
+        scaled_features = self.scale_to_bounds(features)
+        # for grid interpolation strategy
+        scaled_features = scaled_features.transpose(-1, -2).unsqueeze(-1)
+        output = self.gp_layer(scaled_features)
+        return output
 
     def training_step(
         self, batch: dict[str, Tensor], batch_idx: int, dataloader_idx: int = 0
@@ -631,6 +676,8 @@ class DKLGPLayer(ApproximateGP):
         n_outputs: int,
         initial_lengthscale: Tensor,
         initial_inducing_points: Tensor,
+        task: str,
+        scale_bounds: tuple[float],
         kernel: str = "Matern32",
     ):
         """Initialize a new instance of the Gaussian Process Layer.
@@ -639,6 +686,10 @@ class DKLGPLayer(ApproximateGP):
             n_outputs: number of latent output features of the GP
             initial_lengthscale: initial lengthscale to use
             initial_inducing_points: initial inducing points to use
+            task: "classification" or "regression"
+            scale_bounds: bounds for scaling feature output
+                from feature_extractor before forward pass
+                of the GP layer
             kernel: kernel choice, supports one of
                 ['RBF', 'Matern12', 'Matern32', 'Matern52', 'RQ']
 
@@ -647,7 +698,9 @@ class DKLGPLayer(ApproximateGP):
         """
         n_inducing_points = initial_inducing_points.shape[0]
 
+        self.task = task
         self.n_outputs = n_outputs
+        self.scale_bounds = scale_bounds
 
         if n_outputs > 1:
             batch_shape = torch.Size([n_outputs])
@@ -658,9 +711,17 @@ class DKLGPLayer(ApproximateGP):
             n_inducing_points, batch_shape=batch_shape
         )
 
-        variational_strategy = VariationalStrategy(
-            self, initial_inducing_points, variational_distribution
-        )
+        if self.task == "classification":
+            variational_strategy = GridInterpolationVariationalStrategy(
+                self,
+                grid_size=n_inducing_points,
+                grid_bounds=[scale_bounds],
+                variational_distribution=variational_distribution,
+            )
+        else:
+            variational_strategy = VariationalStrategy(
+                self, initial_inducing_points, variational_distribution
+            )
 
         if n_outputs > 1:
             variational_strategy = IndependentMultitaskVariationalStrategy(

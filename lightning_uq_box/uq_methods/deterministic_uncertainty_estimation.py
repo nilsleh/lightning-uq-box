@@ -47,7 +47,7 @@ class DUERegression(DKLRegression):
                 'RBF', 'Matern12', 'Matern32', 'Matern52', 'RQ']
             input_size: image input size of data to the model
             coeff: soft normalization only when sigma larger than coeff,
-                should be (0, 1)
+                for the spectral normalization
             n_power_iterations: number of power iterations for spectral normalization
             freeze_backbone: whether to freeze the feature extractor or not
             optimizer: optimizer used for training
@@ -104,7 +104,8 @@ class DUEClassification(DKLClassification):
             gp_kernel: GP kernel choice, supports one of
                 'RBF', 'Matern12', 'Matern32', 'Matern52', 'RQ']
             task: classification task, one of ['binary', 'multiclass', 'multilabel']
-            coeff: soft normalization only when sigma larger than coeff should be (0, 1)
+            coeff: soft normalization only when sigma larger than coeff,
+                for the spectral normalization
             n_power_iterations: number of power iterations for spectral normalization
             freeze_backbone: whether to freeze the feature extractor or not
             optimizer: optimizer used for training

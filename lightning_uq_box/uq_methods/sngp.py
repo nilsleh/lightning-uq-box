@@ -74,7 +74,7 @@ class SNGPBase(BaseModule):
             feature_scale: Feature scale
             ridge_penalty: Ridge penalty
             coeff: soft normalization only when sigma larger than coeff,
-                should be (0, 1)
+                for the spectral normalization
             n_power_iterations: number of power iterations for spectral normalization
             input_size: image dimension input size needed for spectral normalization
             freeze_backbone: whether to freeze the feature extractor
@@ -384,7 +384,7 @@ class SNGPClassification(SNGPBase):
             feature_scale: Feature scale
             ridge_penalty: Ridge penalty
             coeff: soft normalization only when sigma larger than coeff,
-                should be (0, 1)
+                for the spectral normalization
             n_power_iterations: number of power iterations for spectral normalization
             input_size: image dimension input size needed for spectral normalization
             mean_field_factor: Mean field factor, required for classification problems
