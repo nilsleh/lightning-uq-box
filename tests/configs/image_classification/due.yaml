@@ -20,5 +20,5 @@ model:
 # need more samples to fit lengthscale
 data:
   _target_: lightning_uq_box.datamodules.ToyImageClassificationDatamodule
-  num_samples: 10
+  num_samples: 2
   batch_size: 4
